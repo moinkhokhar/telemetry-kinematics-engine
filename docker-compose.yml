@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  telemetry-engine:
+    build: .
+    volumes:
+      - .:/app
+    environment:
+      - LOG_LEVEL=INFO
+    command: pytest --cov=src --cov-fail-under=85
