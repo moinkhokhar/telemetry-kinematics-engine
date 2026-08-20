@@ -1,5 +1,6 @@
 import json
 import logging
+
 from src.core.exceptions import (
     ChecksumMismatchError,
     CoordinateOutOfBoundsError,
@@ -36,6 +37,12 @@ def test_json_logging_output():
     assert parsed["level"] == "INFO"
     assert parsed["message"] == "Telemetry packet received"
     assert "timestamp" in parsed
+
+
+def test_get_logger_instance():
+    logger = get_logger("unit_test_pipeline")
+    assert logger.name == "unit_test_pipeline"
+    assert len(logger.handlers) >= 1
 
 
 def test_stream_metrics_tracking():

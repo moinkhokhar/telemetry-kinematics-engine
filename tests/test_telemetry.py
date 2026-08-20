@@ -1,9 +1,14 @@
-import pytest
 import struct
-from src.telemetry.decoder import TelemetryDecoder, FRAME_HEADER
+
+import pytest
+
+from src.telemetry.decoder import FRAME_HEADER, TelemetryDecoder
+
 
 def test_valid_packet_decoding():
-    payload = struct.pack(">HHIIIihhh", FRAME_HEADER, 101, 5000, 230000000, 720000000, 150000, 10, -5, 0)
+    payload = struct.pack(
+        ">HHIIIihhh", FRAME_HEADER, 101, 5000, 230000000, 720000000, 150000, 10, -5, 0
+    )
     crc = TelemetryDecoder.calculate_crc16(payload)
     raw_packet = payload + struct.pack(">H", crc)
 
@@ -11,6 +16,7 @@ def test_valid_packet_decoding():
     assert packet.sequence_id == 101
     assert packet.latitude_e7 == 230000000
     assert packet.vx_cms == 10
+
 
 def test_corrupted_crc_rejection():
     payload = struct.pack(">HHIIIihhh", FRAME_HEADER, 1, 100, 0, 0, 0, 0, 0, 0)

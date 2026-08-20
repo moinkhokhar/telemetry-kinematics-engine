@@ -1,6 +1,7 @@
 """6-DOF Spatial State Estimator tracking 3D position and velocity."""
 
 import numpy as np
+
 from src.core.exceptions import FilterDivergenceError
 
 

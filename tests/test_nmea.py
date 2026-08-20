@@ -1,4 +1,5 @@
 import pytest
+
 from src.core.exceptions import (
     ChecksumMismatchError,
     FrameLengthError,
@@ -32,6 +33,7 @@ def test_invalid_nmea_header():
 
 
 def test_truncated_nmea_payload():
-    sentence = "$GPGGA,123519,4807.038*43"
+    # *45 is the correct XOR checksum for "$GPGGA,123519,4807.038"
+    sentence = "$GPGGA,123519,4807.038*45"
     with pytest.raises(FrameLengthError):
         NMEAParser.parse_gpgga(sentence)

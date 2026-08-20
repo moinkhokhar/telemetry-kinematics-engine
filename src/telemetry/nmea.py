@@ -1,6 +1,7 @@
 """NMEA-0183 navigation sentence decoder with checksum verification."""
 
 from dataclasses import dataclass
+
 from src.core.exceptions import (
     ChecksumMismatchError,
     FrameLengthError,

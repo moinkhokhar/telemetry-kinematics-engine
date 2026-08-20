@@ -4,6 +4,7 @@ from typing import Optional
 
 FRAME_HEADER = 0xAA55
 
+
 @dataclass(frozen=True)
 class TelemetryPacket:
     sequence_id: int
@@ -15,6 +16,7 @@ class TelemetryPacket:
     vy_cms: int
     vz_cms: int
 
+
 class TelemetryDecoder:
     """Decodes binary telemetry frames with 16-bit CRC checksum validation."""
 
@@ -22,7 +24,7 @@ class TelemetryDecoder:
     def calculate_crc16(data: bytes) -> int:
         crc = 0xFFFF
         for byte in data:
-            crc ^= (byte << 8)
+            crc ^= byte << 8
             for _ in range(8):
                 if crc & 0x8000:
                     crc = ((crc << 1) ^ 0x1021) & 0xFFFF
@@ -46,7 +48,9 @@ class TelemetryDecoder:
         payload = raw_bytes[:26]
         calculated_crc = cls.calculate_crc16(payload)
         if calculated_crc != expected_crc:
-            raise ValueError(f"CRC mismatch: expected {hex(expected_crc)}, got {hex(calculated_crc)}")
+            raise ValueError(
+                f"CRC mismatch: expected {hex(expected_crc)}, got {hex(calculated_crc)}"
+            )
 
         return TelemetryPacket(
             sequence_id=seq,
@@ -56,5 +60,5 @@ class TelemetryDecoder:
             altitude_mm=alt,
             vx_cms=vx,
             vy_cms=vy,
-            vz_cms=vz
+            vz_cms=vz,
         )

@@ -2,6 +2,7 @@
 
 import math
 from dataclasses import dataclass
+
 from src.core.exceptions import CoordinateOutOfBoundsError
 
 

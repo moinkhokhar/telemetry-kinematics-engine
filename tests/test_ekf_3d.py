@@ -1,4 +1,5 @@
 import numpy as np
+
 from src.estimation.ekf_3d import SpatialKalmanFilter
 
 
@@ -17,7 +18,9 @@ def test_spatial_kalman_trajectory_convergence():
         estimated_trajectory.append(filter_3d.estimated_position)
 
     raw_error = np.mean(np.linalg.norm(measurements - true_trajectory, axis=1))
-    filtered_error = np.mean(np.linalg.norm(np.array(estimated_trajectory) - true_trajectory, axis=1))
+    filtered_error = np.mean(
+        np.linalg.norm(np.array(estimated_trajectory) - true_trajectory, axis=1)
+    )
 
     assert filtered_error < raw_error
     vx, vy, vz = filter_3d.estimated_velocity
