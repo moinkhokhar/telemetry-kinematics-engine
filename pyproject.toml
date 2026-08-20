@@ -1,12 +1,14 @@
 [project]
 name = "telemetry-kinematics-engine"
-version = "0.1.0"
-description = "High-precision telemetry kinematics and state estimation engine"
+version = "0.2.0"
+description = "High-precision aerospace telemetry decoder, geodetic projections, and 6-DOF state estimation engine"
+readme = "README.md"
 authors = [{ name = "Author", email = "developer@example.com" }]
 requires-python = ">=3.10"
 dependencies = [
     "numpy>=1.24.0",
-    "scipy>=1.10.0"
+    "scipy>=1.10.0",
+    "pydantic>=2.0.0"
 ]
 
 [build-system]
@@ -16,3 +18,27 @@ build-backend = "setuptools.build_meta"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+addopts = "-v --strict-markers"
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+fail_under = 85
+show_missing = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = []
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
