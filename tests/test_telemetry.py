@@ -13,6 +13,7 @@ def test_valid_packet_decoding():
     raw_packet = payload + struct.pack(">H", crc)
 
     packet = TelemetryDecoder.decode_frame(raw_packet)
+    assert packet is not None
     assert packet.sequence_id == 101
     assert packet.latitude_e7 == 230000000
     assert packet.vx_cms == 10
