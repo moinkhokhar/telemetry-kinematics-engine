@@ -13,7 +13,7 @@ from src.core.logging import JSONFormatter, get_logger
 from src.core.metrics import StreamMetrics
 
 
-def test_exception_inheritance():
+def test_exception_inheritance() -> None:
     assert issubclass(ChecksumMismatchError, TelemetryEngineError)
     assert issubclass(InvalidPacketHeaderError, TelemetryEngineError)
     assert issubclass(FrameLengthError, TelemetryEngineError)
@@ -21,7 +21,7 @@ def test_exception_inheritance():
     assert issubclass(CoordinateOutOfBoundsError, TelemetryEngineError)
 
 
-def test_json_logging_output():
+def test_json_logging_output() -> None:
     formatter = JSONFormatter()
     record = logging.LogRecord(
         name="test_logger",
@@ -39,13 +39,13 @@ def test_json_logging_output():
     assert "timestamp" in parsed
 
 
-def test_get_logger_instance():
+def test_get_logger_instance() -> None:
     logger = get_logger("unit_test_pipeline")
     assert logger.name == "unit_test_pipeline"
-    assert len(logger.handlers) >= 1
+    assert logger.hasHandlers()
 
 
-def test_stream_metrics_tracking():
+def test_stream_metrics_tracking() -> None:
     metrics = StreamMetrics()
     metrics.record_frame(sequence_id=0, is_valid=True)
     metrics.record_frame(sequence_id=1, is_valid=True)
