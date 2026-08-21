@@ -20,12 +20,18 @@ class NMEAGGASchema(BaseModel):
     """Strict schema for NMEA-0183 GPGGA navigation sentences."""
 
     utc_time: str = Field(min_length=6, max_length=10, description="UTC time string HHMMSS")
-    latitude_deg: float = Field(ge=-90.0, le=90.0, description="Geodetic latitude in decimal degrees")
-    longitude_deg: float = Field(ge=-180.0, le=180.0, description="Geodetic longitude in decimal degrees")
+    latitude_deg: float = Field(
+        ge=-90.0, le=90.0, description="Geodetic latitude in decimal degrees"
+    )
+    longitude_deg: float = Field(
+        ge=-180.0, le=180.0, description="Geodetic longitude in decimal degrees"
+    )
     fix_quality: int = Field(ge=0, le=8, description="GPS fix quality indicator")
     num_satellites: int = Field(ge=0, le=64, description="Satellites in view")
     hdop: float = Field(ge=0.0, le=99.9, description="Horizontal dilution of precision")
-    altitude_m: float = Field(ge=-1000.0, le=100000.0, description="Antenna altitude above mean sea level")
+    altitude_m: float = Field(
+        ge=-1000.0, le=100000.0, description="Antenna altitude above mean sea level"
+    )
 
     @field_validator("utc_time")
     @classmethod

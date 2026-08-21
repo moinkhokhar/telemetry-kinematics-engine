@@ -1,5 +1,7 @@
 import math
+
 import pytest
+
 from src.estimation.attitude import Quaternion
 
 

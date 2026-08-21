@@ -1,7 +1,8 @@
 """Closed-form inverse geodetic transformation (ECEF to WGS84 Geodetic)."""
 
 import math
-from src.transforms.geodetic import ECEFPoint, GeodeticPoint, WGS84_A, WGS84_B, WGS84_E_SQ
+
+from src.transforms.geodetic import WGS84_A, WGS84_B, WGS84_E_SQ, ECEFPoint, GeodeticPoint
 
 
 class InverseCoordinateTransformer:

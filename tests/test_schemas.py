@@ -1,5 +1,6 @@
 import pytest
 from pydantic import ValidationError
+
 from src.telemetry.schemas import NMEAGGASchema, TelemetryFrameSchema
 
 
