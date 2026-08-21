@@ -1,3 +1,8 @@
+import logging
+from src.core.logging import get_logger
+
+logger = get_logger("nmea_parser")
+
 """NMEA-0183 navigation sentence decoder with checksum verification."""
 
 from dataclasses import dataclass
@@ -59,6 +64,7 @@ class NMEAParser:
         if not clean_sentence.startswith(("$GPGGA", "$GNGGA")):
             raise InvalidPacketHeaderError(f"Expected GPGGA header, got: {clean_sentence[:6]}")
         if not cls.verify_checksum(clean_sentence):
+            logger.warning("Invalid NMEA checksum detected", extra={"sentence": clean_sentence})
             raise ChecksumMismatchError("Invalid NMEA checksum")
 
         payload = clean_sentence[1:].split("*")[0]

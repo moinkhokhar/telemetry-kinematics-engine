@@ -1,3 +1,8 @@
+import logging
+from src.core.logging import get_logger
+
+logger = get_logger("telemetry_decoder")
+
 import struct
 from dataclasses import dataclass
 from typing import Optional
@@ -36,6 +41,7 @@ class TelemetryDecoder:
     def decode_frame(cls, raw_bytes: bytes) -> Optional[TelemetryPacket]:
         # Format: Header (2B), Seq (2B), Time (4B), Lat (4B), Lon (4B), Alt (4B), Vx (2B), Vy (2B), Vz (2B), CRC (2B) = 28 Bytes
         if len(raw_bytes) != 28:
+            logger.warning(f"CRC mismatch: expected {hex(expected_crc)}, got {hex(calculated_crc)}")
             raise ValueError(f"Invalid frame length: expected 28 bytes, received {len(raw_bytes)}")
 
         header, seq, time_ms, lat, lon, alt, vx, vy, vz, expected_crc = struct.unpack(
@@ -43,11 +49,13 @@ class TelemetryDecoder:
         )
 
         if header != FRAME_HEADER:
+            logger.warning(f"CRC mismatch: expected {hex(expected_crc)}, got {hex(calculated_crc)}")
             raise ValueError(f"Invalid frame sync header: {hex(header)}")
 
         payload = raw_bytes[:26]
         calculated_crc = cls.calculate_crc16(payload)
         if calculated_crc != expected_crc:
+            logger.warning(f"CRC mismatch: expected {hex(expected_crc)}, got {hex(calculated_crc)}")
             raise ValueError(
                 f"CRC mismatch: expected {hex(expected_crc)}, got {hex(calculated_crc)}"
             )
