@@ -1,6 +1,10 @@
 """Global pytest fixtures and test vector isolation."""
 
+import struct
+
 import pytest
+
+from src.telemetry.decoder import FRAME_HEADER, TelemetryDecoder
 from src.transforms.geodetic import GeodeticPoint
 
 
@@ -19,9 +23,6 @@ def paris_waypoint() -> GeodeticPoint:
 @pytest.fixture
 def sample_binary_frame_payload() -> bytes:
     """Valid binary telemetry packet bytes (28 bytes)."""
-    import struct
-    from src.telemetry.decoder import FRAME_HEADER, TelemetryDecoder
-
     payload = struct.pack(
         ">HHIIIihhh", FRAME_HEADER, 201, 10000, 230000000, 720000000, 150000, 100, -50, 0
     )
