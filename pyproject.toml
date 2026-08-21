@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "telemetry-kinematics-engine"
-version = "0.7.0"
+version = "0.7.1"
 description = "Production-grade aerospace telemetry decoder, geodetic projections, and 6-DOF state estimation engine"
 authors = ["Moin Khokhar <moinkhokhar1998@gmail.com>"]
 readme = "README.md"
@@ -8,16 +8,17 @@ packages = [{include = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-numpy = "^1.26.4"
-pydantic = "^2.8.2"
-scipy = "^1.13.1"
+numpy = ">=1.26.4"
+pydantic = ">=2.8.2"
+scipy = ">=1.13.1"
+typing-extensions = ">=4.12.2"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^9.1.1"
-pytest-cov = "^5.0.0"
-ruff = "^0.5.7"
-mypy = "^1.11.1"
-pip-audit = "^2.7.3"
+pytest = ">=9.1.1"
+pytest-cov = ">=5.0.0"
+ruff = ">=0.5.7"
+mypy = ">=1.11.1"
+pip-audit = ">=2.7.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
