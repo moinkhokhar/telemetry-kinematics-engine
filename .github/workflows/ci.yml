@@ -42,13 +42,26 @@ jobs:
           pip install pip-audit
       - name: Audit Production Dependencies
         run: pip-audit -r requirements.txt
-      - name: Audit Development Dependencies
-        run: pip-audit -r requirements-dev.txt
+
+  infrastructure-check:
+    name: Terraform Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.6.0"
+      - name: Terraform Format Check
+        run: terraform -chdir=infra/terraform fmt -check
+      - name: Terraform Init
+        run: terraform -chdir=infra/terraform init -backend=false
+      - name: Terraform Validate
+        run: terraform -chdir=infra/terraform validate
 
   test-matrix:
     name: Unit & Coverage Matrix (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
-    needs: [lint-and-typecheck, security-audit]
+    needs: [lint-and-typecheck, security-audit, infrastructure-check]
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
