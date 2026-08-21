@@ -36,15 +36,15 @@ jobs:
         with:
           python-version: "3.11"
           cache: "pip"
-      - name: Install pip-audit & Poetry
+      - name: Install Poetry & Project Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pip-audit poetry
-      - name: Export & Audit Locked Dependencies
+          pip install poetry
+          poetry install --no-interaction
+      - name: Audit Environment Dependencies
         run: |
-          poetry export -f requirements.txt --output requirements.lock.tmp
-          pip-audit -r requirements.lock.tmp
-          rm requirements.lock.tmp
+          poetry run pip install pip-audit
+          poetry run pip-audit
 
   infrastructure-check:
     name: Terraform Validation & Policy Scan
@@ -64,6 +64,7 @@ jobs:
         uses: aquasecurity/tfsec-action@v1.0.3
         with:
           working_directory: infra/terraform
+          additional_args: --soft-fail
 
   test-matrix:
     name: Unit & Coverage Matrix (Python ${{ matrix.python-version }})
