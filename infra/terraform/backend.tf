@@ -1,10 +1,10 @@
-# Backend configuration template for state locking
-# terraform {
-#   backend "s3" {
-#     bucket         = "telemetry-engine-tf-state"
-#     key            = "production/state.tfstate"
-#     region         = "us-east-1"
-#     dynamodb_table = "telemetry-engine-tf-locks"
-#     encrypt        = true
-#   }
-# }
+# Production state configuration with encryption and DynamoDB locking
+terraform {
+  backend "s3" {
+    bucket         = "telemetry-engine-tfstate-production"
+    key            = "telemetry-engine/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "telemetry-engine-tf-locks"
+  }
+}

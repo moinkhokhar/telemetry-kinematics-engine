@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: "3.11"
           cache: "pip"
-      - name: Install Tools
+      - name: Install Lint Tools
         run: |
           python -m pip install --upgrade pip
           pip install ruff mypy pydantic numpy scipy
@@ -36,15 +36,18 @@ jobs:
         with:
           python-version: "3.11"
           cache: "pip"
-      - name: Install pip-audit
+      - name: Install pip-audit & Poetry
         run: |
           python -m pip install --upgrade pip
-          pip install pip-audit
-      - name: Audit Production Dependencies
-        run: pip-audit -r requirements.txt
+          pip install pip-audit poetry
+      - name: Export & Audit Locked Dependencies
+        run: |
+          poetry export -f requirements.txt --output requirements.lock.tmp
+          pip-audit -r requirements.lock.tmp
+          rm requirements.lock.tmp
 
   infrastructure-check:
-    name: Terraform Validation
+    name: Terraform Validation & Policy Scan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -53,10 +56,14 @@ jobs:
           terraform_version: "latest"
       - name: Terraform Format Check
         run: terraform -chdir=infra/terraform fmt -check
-      - name: Terraform Init
+      - name: Terraform Init (Backend-Free Validation)
         run: terraform -chdir=infra/terraform init -backend=false
       - name: Terraform Validate
         run: terraform -chdir=infra/terraform validate
+      - name: Run tfsec Security Policy Scanner
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working_directory: infra/terraform
 
   test-matrix:
     name: Unit & Coverage Matrix (Python ${{ matrix.python-version }})
@@ -73,11 +80,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
-      - name: Install Dependencies
+      - name: Install Poetry & Project Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt -r requirements-dev.txt
-          pip install -e .
+          pip install poetry
+          poetry config virtualenvs.create false
+          poetry install --no-interaction
       - name: Execute Pytest with 85% Coverage Limit
         run: |
           pytest --cov=src --cov-report=xml --cov-fail-under=85
