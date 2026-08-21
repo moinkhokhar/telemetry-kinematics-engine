@@ -40,8 +40,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pip-audit
-      - name: Run Security Audit
+      - name: Audit Production Dependencies
         run: pip-audit -r requirements.txt
+      - name: Audit Development Dependencies
+        run: pip-audit -r requirements-dev.txt
 
   test-matrix:
     name: Unit & Coverage Matrix (Python ${{ matrix.python-version }})

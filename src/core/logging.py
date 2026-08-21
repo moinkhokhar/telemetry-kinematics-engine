@@ -1,14 +1,16 @@
-"""Structured JSON logging configuration for telemetry pipelines."""
+"""Structured JSON logging configuration driven by LOG_LEVEL environment settings."""
 
 import json
 import logging
+import logging.config
+import os
 import sys
 from datetime import datetime, timezone
 from typing import Any, Dict
 
 
 class JSONFormatter(logging.Formatter):
-    """Formats standard LogRecords into structured single-line JSON records."""
+    """Formats LogRecords into structured JSON strings."""
 
     def format(self, record: logging.LogRecord) -> str:
         log_entry: Dict[str, Any] = {
@@ -24,12 +26,35 @@ class JSONFormatter(logging.Formatter):
         return json.dumps(log_entry)
 
 
-def get_logger(name: str = "telemetry_engine", level: int = logging.INFO) -> logging.Logger:
-    """Configures and returns a structured logger."""
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
-    if not logger.handlers:
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setFormatter(JSONFormatter())
-        logger.addHandler(handler)
-    return logger
+def configure_logging(level: str | None = None) -> None:
+    """Configures global logging from environment variables."""
+    log_level = level or os.getenv("LOG_LEVEL", "INFO").upper()
+    config = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "json": {
+                "()": JSONFormatter,
+            },
+        },
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "formatter": "json",
+                "stream": sys.stdout,
+            },
+        },
+        "root": {
+            "level": log_level,
+            "handlers": ["console"],
+        },
+    }
+    logging.config.dictConfig(config)
+
+
+def get_logger(name: str = "telemetry_engine") -> logging.Logger:
+    """Returns a structured logger instance."""
+    return logging.getLogger(name)
+
+
+configure_logging()
