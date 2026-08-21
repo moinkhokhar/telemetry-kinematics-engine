@@ -1,8 +1,3 @@
-import logging
-from src.core.logging import get_logger
-
-logger = get_logger("nmea_parser")
-
 """NMEA-0183 navigation sentence decoder with checksum verification."""
 
 from dataclasses import dataclass
@@ -12,6 +7,9 @@ from src.core.exceptions import (
     FrameLengthError,
     InvalidPacketHeaderError,
 )
+from src.core.logging import get_logger
+
+logger = get_logger("nmea_parser")
 
 
 @dataclass(frozen=True)
@@ -62,6 +60,7 @@ class NMEAParser:
         """Parses a $GPGGA / $GNGGA sentence into structured geodetic telemetry."""
         clean_sentence = sentence.strip()
         if not clean_sentence.startswith(("$GPGGA", "$GNGGA")):
+            logger.warning(f"Expected GPGGA header, got: {clean_sentence[:6]}")
             raise InvalidPacketHeaderError(f"Expected GPGGA header, got: {clean_sentence[:6]}")
         if not cls.verify_checksum(clean_sentence):
             logger.warning("Invalid NMEA checksum detected", extra={"sentence": clean_sentence})
@@ -71,6 +70,7 @@ class NMEAParser:
         fields = payload.split(",")
 
         if len(fields) < 10:
+            logger.warning("Incomplete GPGGA sentence")
             raise FrameLengthError("Incomplete GPGGA sentence")
 
         utc_time = fields[1]
