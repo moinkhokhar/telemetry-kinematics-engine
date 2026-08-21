@@ -1,17 +1,8 @@
 import io
+import json
+from unittest.mock import MagicMock
 
 from src.api.health import HealthRequestHandler, get_health_payload, metrics_collector
-
-
-class MockSocket:
-    def __init__(self) -> None:
-        self.output = io.BytesIO()
-
-    def makefile(self, *args, **kwargs) -> io.BytesIO:
-        return self.output
-
-    def sendall(self, data: bytes) -> None:
-        self.output.write(data)
 
 
 def test_health_payload_generation() -> None:
@@ -25,21 +16,35 @@ def test_health_payload_generation() -> None:
 
 
 def test_health_request_handler_get() -> None:
-    request = MockSocket()
-    request.output.write(b"GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n")
-    request.output.seek(0)
+    handler = HealthRequestHandler.__new__(HealthRequestHandler)
+    handler.path = "/health"
+    handler.wfile = io.BytesIO()
+    handler.send_response = MagicMock()
+    handler.send_header = MagicMock()
+    handler.end_headers = MagicMock()
 
-    handler = HealthRequestHandler(request, ("127.0.0.1", 8080), None)  # type: ignore[arg-type]
-    response = request.output.getvalue()
-    assert b"200 OK" in response
-    assert b"application/json" in response
+    handler.do_GET()
+
+    handler.send_response.assert_called_once_with(200)
+    handler.send_header.assert_any_call("Content-Type", "application/json")
+    response_body = json.loads(handler.wfile.getvalue().decode("utf-8"))
+    assert "status" in response_body
+    assert "metrics" in response_body
 
 
 def test_health_request_handler_404() -> None:
-    request = MockSocket()
-    request.output.write(b"GET /unknown HTTP/1.1\r\nHost: localhost\r\n\r\n")
-    request.output.seek(0)
+    handler = HealthRequestHandler.__new__(HealthRequestHandler)
+    handler.path = "/unknown"
+    handler.wfile = io.BytesIO()
+    handler.send_response = MagicMock()
+    handler.send_header = MagicMock()
+    handler.end_headers = MagicMock()
 
-    handler = HealthRequestHandler(request, ("127.0.0.1", 8080), None)  # type: ignore[arg-type]
-    response = request.output.getvalue()
-    assert b"404" in response
+    handler.do_GET()
+
+    handler.send_response.assert_called_once_with(404)
+
+
+def test_health_request_handler_log_message_suppression() -> None:
+    handler = HealthRequestHandler.__new__(HealthRequestHandler)
+    handler.log_message("%s - %s", "GET /health", "200")
