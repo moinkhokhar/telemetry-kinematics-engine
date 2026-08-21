@@ -12,17 +12,8 @@ provider "aws" {
   region = var.aws_region
 }
 
-resource "aws_ecr_repository" "telemetry_engine" {
-  name                 = var.repository_name
-  image_tag_mutability = "IMMUTABLE"
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-
-  tags = {
-    Environment = var.environment
-    Service     = "telemetry-kinematics-engine"
-    ManagedBy   = "Terraform"
-  }
+module "telemetry_ecr" {
+  source          = "./modules/telemetry_service"
+  repository_name = var.repository_name
+  environment     = var.environment
 }
