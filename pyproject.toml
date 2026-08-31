@@ -6,6 +6,9 @@ authors = ["Moin Khokhar <moinkhokhar1998@gmail.com>"]
 readme = "README.md"
 packages = [{include = "src"}]
 
+[tool.poetry.scripts]
+telemetry-engine = "src.application:main"
+
 [tool.poetry.dependencies]
 python = "^3.10"
 numpy = ">=1.26.4"

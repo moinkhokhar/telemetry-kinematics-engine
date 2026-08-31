@@ -2,18 +2,26 @@
 
 import json
 from http.server import BaseHTTPRequestHandler
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from src.core.metrics import StreamMetrics
 
 metrics_collector = StreamMetrics()
+_health_metrics: Optional[StreamMetrics] = None
+
+
+def set_health_metrics(metrics: StreamMetrics) -> None:
+    """Shares the runtime metrics instance with the health endpoint."""
+    global _health_metrics
+    _health_metrics = metrics
 
 
 def get_health_payload() -> Dict[str, Any]:
     """Generates structured health dictionary."""
+    metrics = _health_metrics or metrics_collector
     return {
-        "status": "healthy" if metrics_collector.packet_loss_rate < 5.0 else "degraded",
-        "metrics": metrics_collector.health_summary,
+        "status": "healthy" if metrics.packet_loss_rate < 5.0 else "degraded",
+        "metrics": metrics.health_summary,
     }
 
 

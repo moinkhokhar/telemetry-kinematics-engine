@@ -16,8 +16,13 @@ spec:
     spec:
       containers:
         - name: processor
-          image: telemetry-kinematics-engine:v0.5.0
-          command: ["./scripts/run_tests.sh"]
+          image: telemetry-kinematics-engine:v0.7.1
+          command: ["python", "-m", "src"]
+          ports:
+            - containerPort: 50051
+              name: telemetry
+            - containerPort: 8080
+              name: health
           resources:
             requests:
               memory: "256Mi"
@@ -28,3 +33,7 @@ spec:
           env:
             - name: LOG_LEVEL
               value: "INFO"
+            - name: TELEMETRY_PORT
+              value: "50051"
+            - name: HEALTH_PORT
+              value: "8080"

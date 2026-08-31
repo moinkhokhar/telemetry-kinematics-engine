@@ -7,13 +7,16 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt requirements-dev.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt -r requirements-dev.txt
+RUN pip install poetry
 
-COPY . /app
+COPY pyproject.toml poetry.lock ./
+RUN poetry install --no-interaction --no-ansi --no-root
 
-RUN pip install --no-deps -e .
+COPY . .
 
-CMD ["pytest", "--cov=src", "--cov-report=term-missing"]
+RUN poetry install --no-interaction --no-ansi --no-deps
+
+CMD ["python", "-m", "src"]

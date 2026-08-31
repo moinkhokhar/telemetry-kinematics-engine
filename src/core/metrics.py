@@ -31,6 +31,17 @@ class StreamMetrics:
             elif error_type == "header":
                 self.invalid_headers += 1
 
+    def record_nmea_frame(self, is_valid: bool, error_type: Optional[str] = None) -> None:
+        """Updates stream metrics for NMEA sentences that lack a sequence counter."""
+        self.total_frames_received += 1
+        if is_valid:
+            self.valid_frames_decoded += 1
+        else:
+            if error_type == "crc":
+                self.crc_errors += 1
+            elif error_type == "header":
+                self.invalid_headers += 1
+
     @property
     def packet_loss_rate(self) -> float:
         """Calculates percentage packet loss across observed frame sequence."""
