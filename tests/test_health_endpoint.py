@@ -2,12 +2,15 @@ import io
 import json
 from unittest.mock import MagicMock
 
-from src.api.health import HealthRequestHandler, get_health_payload, metrics_collector
+from src.api.health import HealthRequestHandler, get_health_payload, set_health_metrics
+from src.core.metrics import StreamMetrics
 
 
 def test_health_payload_generation() -> None:
-    metrics_collector.record_frame(sequence_id=0, is_valid=True)
-    metrics_collector.record_frame(sequence_id=1, is_valid=True)
+    metrics = StreamMetrics()
+    set_health_metrics(metrics)
+    metrics.record_frame(sequence_id=0, is_valid=True)
+    metrics.record_frame(sequence_id=1, is_valid=True)
 
     payload = get_health_payload()
     assert payload["status"] == "healthy"

@@ -1,5 +1,6 @@
 """End-to-end telemetry processing pipeline."""
 
+import time
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, Union, cast
 
@@ -8,6 +9,8 @@ import numpy as np
 from src.core.error_tracking import ErrorTracker, global_error_tracker
 from src.core.exceptions import (
     ChecksumMismatchError,
+    CoordinateOutOfBoundsError,
+    FilterDivergenceError,
     FrameLengthError,
     InvalidPacketHeaderError,
 )
@@ -35,6 +38,7 @@ class PipelineResult:
     error_type: Optional[str] = None
     transformed: Optional[dict[str, Any]] = None
     estimated: Optional[dict[str, Any]] = None
+    processing_time_ms: float = 0.0
 
 
 class TelemetryPipeline:
@@ -60,27 +64,32 @@ class TelemetryPipeline:
 
     def process_binary_frame(self, raw_bytes: bytes) -> PipelineResult:
         """Decode a binary telemetry frame and run it through the pipeline."""
+        started = time.perf_counter()
         try:
             packet = TelemetryDecoder.decode_frame(raw_bytes)
         except Exception as exc:
-            self._record_binary_error(packet=None, exc=exc)
-            return PipelineResult(success=False, error=exc)
+            elapsed = (time.perf_counter() - started) * 1000.0
+            self._record_binary_error(exc=exc)
+            return PipelineResult(success=False, error=exc, processing_time_ms=elapsed)
 
         packet = cast(TelemetryPacket, packet)
         self.metrics.record_frame(sequence_id=packet.sequence_id, is_valid=True)
         transformed = self._transform_binary(packet)
         estimated = self._estimate_position(packet, transformed)
+        elapsed = (time.perf_counter() - started) * 1000.0
         result = PipelineResult(
             success=True,
             data=packet,
             transformed=transformed,
             estimated=estimated,
+            processing_time_ms=elapsed,
         )
         self._invoke_handler(packet, transformed, estimated)
         return result
 
     def process_nmea_sentence(self, sentence: str) -> PipelineResult:
         """Decode an NMEA sentence and run it through the pipeline."""
+        started = time.perf_counter()
         clean = sentence.strip()
         data: BinaryOrNMEA
         try:
@@ -91,25 +100,34 @@ class TelemetryPipeline:
             else:
                 raise ValueError(f"Unsupported NMEA sentence: {clean[:6]}")
         except Exception as exc:
+            elapsed = (time.perf_counter() - started) * 1000.0
             self._record_nmea_error(clean, exc)
-            return PipelineResult(success=False, error=exc)
+            return PipelineResult(success=False, error=exc, processing_time_ms=elapsed)
 
         self.metrics.record_nmea_frame(is_valid=True)
         transformed = self._transform_nmea(data)
         estimated = self._estimate_position(data, transformed)
+        elapsed = (time.perf_counter() - started) * 1000.0
         result = PipelineResult(
             success=True,
             data=data,
             transformed=transformed,
             estimated=estimated,
+            processing_time_ms=elapsed,
         )
         self._invoke_handler(data, transformed, estimated)
         return result
 
     def process(self, data: Union[bytes, str]) -> PipelineResult:
         """Auto-detect input type and route to the appropriate decoder."""
+        if data is None:
+            raise ValueError("telemetry input must not be None")
         if isinstance(data, str):
             return self.process_nmea_sentence(data)
+        if not isinstance(data, (bytes, bytearray)):
+            raise TypeError(f"telemetry input must be bytes or str, got {type(data).__name__}")
+        if len(data) > 65536:
+            raise ValueError(f"telemetry frame exceeds maximum size of 65536 bytes: {len(data)}")
         if self._is_nmea_bytes(data):
             return self.process_nmea_sentence(data.decode("ascii"))
         return self.process_binary_frame(data)
@@ -117,14 +135,12 @@ class TelemetryPipeline:
     @staticmethod
     def _is_nmea_bytes(data: bytes) -> bool:
         """Detects whether raw bytes contain an ASCII NMEA sentence."""
-        if not data:
+        if not data or data[0:1] != b"$":
             return False
-        if data[0:1] != b"$":
-            return False
-        try:
-            data.decode("ascii")
-        except UnicodeDecodeError:
-            return False
+        # Fast ASCII check without full decode: reject any byte with high bit set.
+        for byte in data:
+            if byte > 127:
+                return False
         return True
 
     def _transform_binary(self, packet: TelemetryPacket) -> Optional[dict[str, Any]]:
@@ -160,7 +176,7 @@ class TelemetryPipeline:
             )
             ecef = CoordinateTransformer.geodetic_to_ecef(geodetic)
             return {"geodetic": geodetic, "ecef": ecef}
-        except Exception as exc:
+        except CoordinateOutOfBoundsError as exc:
             logger.warning("Coordinate transformation failed: %s", exc)
             return None
 
@@ -179,24 +195,25 @@ class TelemetryPipeline:
                 "position": self._ekf.estimated_position,
                 "velocity": self._ekf.estimated_velocity,
             }
-        except Exception as exc:
+        except FilterDivergenceError as exc:
             logger.warning("State estimation failed: %s", exc)
             return None
 
-    def _record_binary_error(self, packet: Optional[TelemetryPacket], exc: Exception) -> None:
+    def _record_binary_error(self, exc: Exception) -> None:
         """Record binary decoding failures in metrics and error tracker."""
-        error_type: Optional[str] = "header"
+        error_type: str | None = "header"
         msg = str(exc)
         if "CRC mismatch" in msg:
             error_type = "crc"
         elif "frame length" in msg.lower():
             error_type = None
 
-        self.metrics.total_frames_received += 1
-        if error_type == "crc":
-            self.metrics.crc_errors += 1
-        elif error_type == "header":
-            self.metrics.invalid_headers += 1
+        with self.metrics._lock:
+            self.metrics.total_frames_received += 1
+            if error_type == "crc":
+                self.metrics.crc_errors += 1
+            elif error_type == "header":
+                self.metrics.invalid_headers += 1
 
         self.error_tracker.capture_exception(exc, error_code="ERR_PIPELINE_BINARY")
 

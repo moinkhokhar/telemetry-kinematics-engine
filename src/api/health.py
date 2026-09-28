@@ -2,12 +2,11 @@
 
 import json
 from http.server import BaseHTTPRequestHandler
-from typing import Any, Dict, Optional
+from typing import Any
 
 from src.core.metrics import StreamMetrics
 
-metrics_collector = StreamMetrics()
-_health_metrics: Optional[StreamMetrics] = None
+_health_metrics: StreamMetrics | None = None
 
 
 def set_health_metrics(metrics: StreamMetrics) -> None:
@@ -16,9 +15,21 @@ def set_health_metrics(metrics: StreamMetrics) -> None:
     _health_metrics = metrics
 
 
-def get_health_payload() -> Dict[str, Any]:
+def get_health_payload() -> dict[str, Any]:
     """Generates structured health dictionary."""
-    metrics = _health_metrics or metrics_collector
+    if _health_metrics is None:
+        return {
+            "status": "degraded",
+            "metrics": {
+                "total_received": 0,
+                "valid_decoded": 0,
+                "dropped": 0,
+                "crc_errors": 0,
+                "invalid_headers": 0,
+                "loss_rate_pct": 0.0,
+            },
+        }
+    metrics = _health_metrics
     return {
         "status": "healthy" if metrics.packet_loss_rate < 5.0 else "degraded",
         "metrics": metrics.health_summary,

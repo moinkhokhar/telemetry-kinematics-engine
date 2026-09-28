@@ -21,8 +21,10 @@ spec:
           ports:
             - containerPort: 50051
               name: telemetry
+              protocol: UDP
             - containerPort: 8080
               name: health
+              protocol: TCP
           resources:
             requests:
               memory: "256Mi"
@@ -37,3 +39,19 @@ spec:
               value: "50051"
             - name: HEALTH_PORT
               value: "8080"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 5
+            timeoutSeconds: 1
+            failureThreshold: 3

@@ -25,6 +25,7 @@ def test_pipeline_processes_valid_binary_frame() -> None:
     assert result.data.sequence_id == 1
     assert result.transformed is not None
     assert result.estimated is not None
+    assert result.processing_time_ms >= 0.0
     assert metrics.valid_frames_decoded == 1
     assert metrics.total_frames_received == 1
 
@@ -40,6 +41,23 @@ def test_pipeline_records_invalid_binary_frame_metrics() -> None:
     assert result.success is False
     assert metrics.total_frames_received == 1
     assert metrics.crc_errors == 1
+    assert metrics.invalid_headers == 0
+    assert metrics.valid_frames_decoded == 0
+
+
+def test_pipeline_records_invalid_header_binary_frame_metrics() -> None:
+    """A binary frame with an invalid header should increment invalid_headers."""
+    metrics = StreamMetrics()
+    pipeline = TelemetryPipeline(metrics=metrics)
+
+    raw_packet = b"\xff\xff" + b"\x00" * 26
+
+    result = pipeline.process_binary_frame(raw_packet)
+
+    assert result.success is False
+    assert metrics.total_frames_received == 1
+    assert metrics.invalid_headers == 1
+    assert metrics.crc_errors == 0
     assert metrics.valid_frames_decoded == 0
 
 
